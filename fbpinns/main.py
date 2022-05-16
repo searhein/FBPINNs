@@ -112,7 +112,7 @@ def full_model_PINN(x, model, c):
 class FBPINNTrainer(_Trainer):
     "FBPINN model trainer class"
     
-    def _train_step(self, models, optimizers, c, D, i):# use separate function to ensure computational graph/memory is released
+    def _train_step(self, models, optimizers, c, D, i, update):# use separate function to ensure computational graph/memory is released
         
         ## ZERO PARAMETER GRADIENTS, SET TO TRAIN
         for optimizer in optimizers: optimizer.zero_grad()
@@ -160,8 +160,10 @@ class FBPINNTrainer(_Trainer):
                     # get model yj segment iseg
                     yj = yjs[j1]# j1 is the index of yj for model im2 in yjs above
                     if im2 == im: yj = [t[j2:j3]           for t in yj]# get appropriate segment
-                    else:         yj = [t[j2:j3].detach()  for t in yj]
-                    
+                    else:
+                        if update:
+                            yj = [t[j2:j3].detach()  for t in yj]
+
                     # add to model list
                     yjs_seg.append(yj)
                 
@@ -231,7 +233,7 @@ class FBPINNTrainer(_Trainer):
         # define domain
         D = ActiveRectangularDomainND(c.SUBDOMAIN_XS, c.SUBDOMAIN_WS, device=device)
         D.update_sampler(c.BATCH_SIZE, c.RANDOM)
-        A = c.ACTIVE_SCHEDULER(c.N_STEPS, D, *c.ACTIVE_SCHEDULER_ARGS)
+        A = c.ACTIVE_SCHEDULER(c.N_STEPS, D, c.N_UPDATE_EVERY_ITERATIONS, *c.ACTIVE_SCHEDULER_ARGS)
         
         # create models
         models = [c.MODEL(c.P.d[0], c.P.d[1], c.N_HIDDEN, c.N_LAYERS) for _ in range(D.N_MODELS)]# problem-specific
@@ -250,15 +252,18 @@ class FBPINNTrainer(_Trainer):
         
         mstep, fstep, yj_test_losses = 0, 0, []
         start, gpu_time = time.time(), 0.
-        for i,active in enumerate(A):
-            
+        for i,active_and_update in enumerate(A):
+
+            active = active_and_update[0]
+            update = active_and_update[1]
+
             # update active if required
             if active is not None: 
                 D.update_active(active)
                 print(i, "Active updated:\n", active)
                 
             gpu_start = time.time()
-            xs, yjs, yjs_sum, loss = self._train_step(models, optimizers, c, D, i)
+            xs, yjs, yjs_sum, loss = self._train_step(models, optimizers, c, D, i, update)
             for im,i1 in D.active_ims: mstep += models[im].size# record number of weights updated
             for im,i1 in D.active_fixed_neighbours_ims: fstep += models[im].flops(xs[i1].shape[0])# record number of FLOPS
             gpu_time += time.time()-gpu_start

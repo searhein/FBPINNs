@@ -47,7 +47,7 @@ def run_PINN():
 def run_FBPINN():
     sampler = "r" if random else "m"
     c = Constants(
-                  RUN="final_FBPINN_%s_%sh_%sl_%sb_%s_%sw_%s"%(P.name, n_hidden, n_layers, batch_size[0], sampler, width, A.name),
+                  RUN="final_FBPINN_%s_%sh_%sl_%sb_%s_%sw_%s_%su"%(P.name, n_hidden, n_layers, batch_size[0], sampler, width, A.name, n_update_every_iterations),
                   P=P,
                   SUBDOMAIN_XS=subdomain_xs,
                   SUBDOMAIN_WS=subdomain_ws,
@@ -193,29 +193,48 @@ random = False
 #     runs.append(run_PINN())
 
 
+# Cos w=1 and w=15
+
+# P = problems.Cos_multi1D_1(w1=1, w2=15, A=0)
+# subdomain_xs = get_subdomain_xs([np.array([2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2])], [2*np.pi])
+# boundary_n = (1/P.w2,)
+# y_n = (0,2)
+# batch_size_test = (5000,)
+#
+# for n_hidden, n_layers, batch_size, n_steps in [
+#                                        (20, 2, (1001,), 3000),
+#                                        (20, 2, (1001,), 3100),
+#                                        (20, 2, (1001,), 3200),
+#                                        (20, 2, (1001,), 3300),
+#                                        (20, 2, (1001,), 3400),
+#                                        (20, 2, (1001,), 3500),
+#                                        (20, 2, (1001,), 3600),
+#                                        (20, 2, (1001,), 3700),
+#                                        (20, 2, (1001,), 3800),
+#                                        (20, 2, (1001,), 3900),
+#                                        (20, 2, (1001,), 4000)]:
+#     save_frequency = n_steps
+#     runs.append(run_PINN())
+
 # Cos w=15
 
-P = problems.Cos_multi1D_1(w1=1, w2=15, A=0)
+P = problems.Cos1D_1(w=15, A=0)
 subdomain_xs = get_subdomain_xs([np.array([2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2])], [2*np.pi])
-boundary_n = (1/P.w2,)
-y_n = (0,2)
+boundary_n = (1/P.w,)
+y_n = (0,1/P.w)
+batch_size = (3000,)
 batch_size_test = (5000,)
 
-for n_hidden, n_layers, batch_size, n_steps in [
-                                       (20, 2, (1001,), 3000),
-                                       (20, 2, (1001,), 3100),
-                                       (20, 2, (1001,), 3200),
-                                       (20, 2, (1001,), 3300),
-                                       (20, 2, (1001,), 3400),
-                                       (20, 2, (1001,), 3500),
-                                       (20, 2, (1001,), 3600),
-                                       (20, 2, (1001,), 3700),
-                                       (20, 2, (1001,), 3800),
-                                       (20, 2, (1001,), 3900),
-                                       (20, 2, (1001,), 4000)]:
-    save_frequency = n_steps
-    runs.append(run_PINN())
-
+n_hidden, n_layers = 16, 2
+width = 0.7
+subdomain_ws = get_subdomain_ws(subdomain_xs, width)
+args = ()
+for A,n_update_every_iterations,n_steps in [(AllActiveSchedulerND, 1, 1000),
+                                            (AllActiveSchedulerND, 5, 1000),
+                                            (AllActiveSchedulerND, 10, 1000),
+                                            (AllActiveSchedulerND, 50, 1000),
+                                            (AllActiveSchedulerND, 100, 1000)]:
+    runs.append(run_FBPINN())
 
 if __name__ == "__main__":# required for multiprocessing
 
@@ -224,7 +243,7 @@ if __name__ == "__main__":# required for multiprocessing
     # GLOBAL VARIABLES
     
     # parallel devices (GPUs/ CPU cores) to run on
-    DEVICES = ["cpu"]*8
+    DEVICES = ["cpu"]*5
     
     
     # RUN

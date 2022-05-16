@@ -44,13 +44,22 @@ class AllActiveSchedulerND(_ActiveScheduler):
     "All models are active all of the time"
     
     name = "All"
+
+    def __init__(self, N_STEPS, D, N_UPDATE_EVERY_ITERATIONS):
+        super().__init__(N_STEPS, D)
+
+        self.N_UPDATE_EVERY_ITERATIONS = N_UPDATE_EVERY_ITERATIONS
     
     def __iter__(self):
         
         for i in range(self.N_STEPS):
-            if i == 0: yield np.ones(self.nm, dtype=int)# (nm)
-            else: yield None
-
+            if i % self.N_UPDATE_EVERY_ITERATIONS == 0:
+                if i == 0:
+                    yield [np.ones(self.nm, dtype=int), True] # (nm)
+                else:
+                    yield [None, True]
+            else:
+                yield [None, False]
 
 # POINT-BASED ACTIVE SCHEDULERS
 

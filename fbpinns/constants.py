@@ -82,6 +82,8 @@ class Constants(ConstantsBase):
         self.LRATE = 1e-3
         
         self.N_STEPS = 50000
+
+        self.N_UPDATE_EVERY_ITERATIONS = 1
         
         # seed
         self.SEED = 123
