@@ -229,11 +229,11 @@ n_hidden, n_layers = 16, 2
 width = 0.7
 subdomain_ws = get_subdomain_ws(subdomain_xs, width)
 args = ()
-for A,n_update_every_iterations,n_steps in [(AllActiveSchedulerND, 1, 1000),
-                                            (AllActiveSchedulerND, 5, 1000),
-                                            (AllActiveSchedulerND, 10, 1000),
-                                            (AllActiveSchedulerND, 50, 1000),
-                                            (AllActiveSchedulerND, 100, 1000)]:
+for A,n_update_every_iterations,n_steps in [(AllActiveSchedulerND, 1, 50000),
+                                            (AllActiveSchedulerND, 5, 50000),
+                                            (AllActiveSchedulerND, 10, 50000),
+                                            (AllActiveSchedulerND, 50, 50000),
+                                            (AllActiveSchedulerND, 100, 50000)]:
     runs.append(run_FBPINN())
 
 if __name__ == "__main__":# required for multiprocessing
