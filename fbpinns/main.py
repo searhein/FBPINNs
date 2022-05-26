@@ -112,7 +112,7 @@ def full_model_PINN(x, model, c):
 class FBPINNTrainer(_Trainer):
     "FBPINN model trainer class"
     
-    def _train_step(self, models, optimizers, c, D, i, update):# use separate function to ensure computational graph/memory is released
+    def _train_step(self, models, optimizers, c, D, i, update, yjs_previous):# use separate function to ensure computational graph/memory is released
         
         ## ZERO PARAMETER GRADIENTS, SET TO TRAIN
         for optimizer in optimizers: optimizer.zero_grad()
@@ -162,7 +162,12 @@ class FBPINNTrainer(_Trainer):
                     if im2 == im: yj = [t[j2:j3]           for t in yj]# get appropriate segment
                     else:
                         if update:
+                            # print(i)
                             yj = [t[j2:j3].detach()  for t in yj]
+                        else:
+                            yj_previous = yjs_previous[j1]
+                            yj = [t[j2:j3].detach()  for t in yj_previous]
+
 
                     # add to model list
                     yjs_seg.append(yj)
@@ -196,7 +201,8 @@ class FBPINNTrainer(_Trainer):
         # return result
         return ([t.detach() for t in xs], 
                 [[t.detach() for t in ts] for ts in yjs], 
-                [[t.detach() for t in ts] for ts in yjs_sum], loss.item())
+                [[t.detach() for t in ts] for ts in yjs_sum], loss.item(),
+                yjs)
     
     def _test_step(self, x_test, yj_true,   xs, yjs, yjs_sum,   models, c, D, i, mstep, fstep, writer, yj_test_losses):# use separate function to ensure computational graph/memory is released
 
@@ -252,6 +258,7 @@ class FBPINNTrainer(_Trainer):
         
         mstep, fstep, yj_test_losses = 0, 0, []
         start, gpu_time = time.time(), 0.
+        yjs_previous = []
         for i,active_and_update in enumerate(A):
 
             active = active_and_update[0]
@@ -263,7 +270,7 @@ class FBPINNTrainer(_Trainer):
                 print(i, "Active updated:\n", active)
                 
             gpu_start = time.time()
-            xs, yjs, yjs_sum, loss = self._train_step(models, optimizers, c, D, i, update)
+            xs, yjs, yjs_sum, loss, yjs_previous = self._train_step(models, optimizers, c, D, i, update, yjs_previous)
             for im,i1 in D.active_ims: mstep += models[im].size# record number of weights updated
             for im,i1 in D.active_fixed_neighbours_ims: fstep += models[im].flops(xs[i1].shape[0])# record number of FLOPS
             gpu_time += time.time()-gpu_start

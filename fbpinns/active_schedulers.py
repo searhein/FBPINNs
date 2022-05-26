@@ -52,14 +52,30 @@ class AllActiveSchedulerND(_ActiveScheduler):
     
     def __iter__(self):
         
+        # for i in range(self.N_STEPS):
+        #     if i % self.N_UPDATE_EVERY_ITERATIONS == 0:
+        #         if i == 0:
+        #             print("Case 1")
+        #             yield [np.ones(self.nm, dtype=int), True] # (nm)
+        #         else:
+        #             print("Case 2")
+        #             yield [None, True]
+        #     else:
+        #         print("Case 3")
+        #         yield [None, False]
+
+# ###########################
         for i in range(self.N_STEPS):
-            if i % self.N_UPDATE_EVERY_ITERATIONS == 0:
-                if i == 0:
-                    yield [np.ones(self.nm, dtype=int), True] # (nm)
-                else:
-                    yield [None, True]
+            # print(i, self.N_UPDATE_EVERY_ITERATIONS)
+            if i == 0:
+                yield [np.ones(self.nm, dtype=int), True]
             else:
-                yield [None, False]
+                if i % self.N_UPDATE_EVERY_ITERATIONS == 0:
+                    yield [None, True]  # (nm)
+                else:
+                    # print("FALSE")
+                    yield [None, False]
+# ###########################
 
 # POINT-BASED ACTIVE SCHEDULERS
 

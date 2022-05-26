@@ -47,7 +47,7 @@ def run_PINN():
 def run_FBPINN():
     sampler = "r" if random else "m"
     c = Constants(
-                  RUN="final_FBPINN_%s_%sh_%sl_%sb_%s_%sw_%s_%su"%(P.name, n_hidden, n_layers, batch_size[0], sampler, width, A.name, n_update_every_iterations),
+                  RUN="final_FBPINN_%s_%sh_%sl_%sb_%s_%sw_%s_%su_%ssd"%(P.name, n_hidden, n_layers, batch_size[0], sampler, width, A.name, n_update_every_iterations,len(subdomain_xs[0])-1),
                   P=P,
                   SUBDOMAIN_XS=subdomain_xs,
                   SUBDOMAIN_WS=subdomain_ws,
@@ -62,6 +62,8 @@ def run_FBPINN():
                   N_STEPS=n_steps,
                   BATCH_SIZE_TEST=batch_size_test,
                   PLOT_LIMS=plot_lims,
+                  MODEL_SAVE_FREQ=save_frequency,
+                  N_UPDATE_EVERY_ITERATIONS = n_update_every_iterations
                   )
     return c, FBPINNTrainer
 
@@ -219,7 +221,8 @@ random = False
 # Cos w=15
 
 P = problems.Cos1D_1(w=15, A=0)
-subdomain_xs = get_subdomain_xs([np.array([2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2])], [2*np.pi])
+# subdomain_xs = get_subdomain_xs([np.array([2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2])], [2*np.pi])
+subdomain_xs = get_subdomain_xs([np.array([2,2,2,2,2])], [2*np.pi])
 boundary_n = (1/P.w,)
 y_n = (0,1/P.w)
 batch_size = (3000,)
@@ -229,11 +232,13 @@ n_hidden, n_layers = 16, 2
 width = 0.7
 subdomain_ws = get_subdomain_ws(subdomain_xs, width)
 args = ()
-for A,n_update_every_iterations,n_steps in [(AllActiveSchedulerND, 1, 50000),
-                                            (AllActiveSchedulerND, 5, 50000),
-                                            (AllActiveSchedulerND, 10, 50000),
-                                            (AllActiveSchedulerND, 50, 50000),
-                                            (AllActiveSchedulerND, 100, 50000)]:
+for A,n_update_every_iterations,n_steps in [
+                                            (AllActiveSchedulerND,   1, 5000),
+                                            (AllActiveSchedulerND,   5, 5000),
+                                            (AllActiveSchedulerND,  10, 5000),
+                                            (AllActiveSchedulerND,  50, 5000),
+                                            (AllActiveSchedulerND, 100, 5000)]:
+    save_frequency = n_steps
     runs.append(run_FBPINN())
 
 if __name__ == "__main__":# required for multiprocessing
