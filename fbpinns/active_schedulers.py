@@ -45,10 +45,11 @@ class AllActiveSchedulerND(_ActiveScheduler):
     
     name = "All"
 
-    def __init__(self, N_STEPS, D, N_UPDATE_EVERY_ITERATIONS):
+    def __init__(self, N_STEPS, D, N_UPDATE_EVERY_ITERATIONS, N_NUMBER_OF_UPDATES):
         super().__init__(N_STEPS, D)
 
         self.N_UPDATE_EVERY_ITERATIONS = N_UPDATE_EVERY_ITERATIONS
+        self.N_NUMBER_OF_UPDATES = N_NUMBER_OF_UPDATES
     
     def __iter__(self):
         
@@ -64,6 +65,7 @@ class AllActiveSchedulerND(_ActiveScheduler):
         #         print("Case 3")
         #         yield [None, False]
 
+        counter = 0
 # ###########################
         for i in range(self.N_STEPS):
             # print(i, self.N_UPDATE_EVERY_ITERATIONS)
@@ -71,10 +73,15 @@ class AllActiveSchedulerND(_ActiveScheduler):
                 yield [np.ones(self.nm, dtype=int), True]
             else:
                 if i % self.N_UPDATE_EVERY_ITERATIONS == 0:
+                    counter = 0
                     yield [None, True]  # (nm)
                 else:
+                    counter = counter + 1
+                    if counter < self.N_NUMBER_OF_UPDATES:
+                        yield [None, True]  # (nm)
+                    else:
+                        yield [None, False]
                     # print("FALSE")
-                    yield [None, False]
 # ###########################
 
 # POINT-BASED ACTIVE SCHEDULERS

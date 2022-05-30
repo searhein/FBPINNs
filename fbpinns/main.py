@@ -239,7 +239,7 @@ class FBPINNTrainer(_Trainer):
         # define domain
         D = ActiveRectangularDomainND(c.SUBDOMAIN_XS, c.SUBDOMAIN_WS, device=device)
         D.update_sampler(c.BATCH_SIZE, c.RANDOM)
-        A = c.ACTIVE_SCHEDULER(c.N_STEPS, D, c.N_UPDATE_EVERY_ITERATIONS, *c.ACTIVE_SCHEDULER_ARGS)
+        A = c.ACTIVE_SCHEDULER(c.N_STEPS, D, c.N_UPDATE_EVERY_ITERATIONS, c.N_NUMBER_OF_UPDATES, *c.ACTIVE_SCHEDULER_ARGS)
         
         # create models
         models = [c.MODEL(c.P.d[0], c.P.d[1], c.N_HIDDEN, c.N_LAYERS) for _ in range(D.N_MODELS)]# problem-specific
@@ -263,6 +263,8 @@ class FBPINNTrainer(_Trainer):
 
             active = active_and_update[0]
             update = active_and_update[1]
+            if update:
+                print("Update in iteration ",i)
 
             # update active if required
             if active is not None: 

@@ -84,6 +84,7 @@ class Constants(ConstantsBase):
         self.N_STEPS = 50000
 
         self.N_UPDATE_EVERY_ITERATIONS = 1
+        self.N_NUMBER_OF_UPDATES = self.N_UPDATE_EVERY_ITERATIONS
         
         # seed
         self.SEED = 123
