@@ -55,7 +55,7 @@ class ActiveRectangularDomainND(domainsBase._RectangularDomainND):
     def __init__(self, subdomain_xs, subdomain_ws, scale=0.05, device=None):
         super().__init__(subdomain_xs, subdomain_ws)
         
-        self.N_MODELS = np.product(self.nm)
+        self.N_MODELS = np.product(self.nm) + 1
         self.N_ORDERS = len(self.segments)
         self.onm = (self.N_ORDERS,)+self.nm
         self.N_SEGMENTS = np.product(self.onm)
@@ -108,6 +108,11 @@ class ActiveRectangularDomainND(domainsBase._RectangularDomainND):
         self.xmins, self.xmaxs, self.wmins, self.wmaxs = xmins, xmaxs, wmins, wmaxs
         self.n = n
         
+        # add coarse model
+        xmin, xmax = np.array([[x.min(), x.max()] for x in self.subdomain_xs]).T# nd
+        mu = (xmin + xmax)/2; sd = (xmax - xmin)/2
+        self.n.append((mu, sd))
+        
         
     # UPDATE FUNCTIONS
     
@@ -146,6 +151,10 @@ class ActiveRectangularDomainND(domainsBase._RectangularDomainND):
             
             w.append(windows.construct_window_function_ND(xmin, xmax, self.scale*wmin, self.scale*wmax))
         
+        # add coarse model
+        xmin, xmax = [None for _ in range(self.nd)], [None for _ in range(self.nd)]
+        w.append(windows.construct_window_function_ND(xmin, xmax, self.scale*wmin, self.scale*wmax))
+        
         return w
     
     def _get_isegs(self, ioa, ii):
@@ -174,7 +183,8 @@ class ActiveRectangularDomainND(domainsBase._RectangularDomainND):
     def update_active(self, active=None):
         "Update the domain with the current active array"
         
-        if active is None: active = np.ones(self.nm, dtype=int)
+        if active is None: raise Exception
+        active, coarse = active[0], active[1]
         if active.shape != self.nm: raise Exception("ERROR: active shape %s does not equal model grid %s!"%(active.shape, self.nm))
         
         # get neighbours
@@ -220,6 +230,40 @@ class ActiveRectangularDomainND(domainsBase._RectangularDomainND):
                         
                         m[im].append((iseg,i2,i3))# add segment to model map
                         s[iseg].append((im,i1,i2,i3))# add model to segment map
+        
+        #
+        # add coarse model
+        # make sure active_ims strictly matches active_fixed_neighbours_ims as indices reused
+        if coarse:
+            im = self.N_MODELS-1
+            
+            # add to dynamic lists
+            i1 = len(active_fixed_neighbours_ims)
+            active_fixed_neighbours_ims.append((im,i1))
+            if coarse == 1:
+                active_ims.append((im,i1))
+            
+            for iseg in range(self.N_SEGMENTS):# for each segment
+                
+                iii = np.unravel_index(iseg, self.onm)# unravel index on onm
+                ioa = iii[0]
+                ii_ = iii[1:]
+                
+                # if segment exists
+                if False not in [i_ < self.segments[ioa].shape[2+j] for j,i_ in enumerate(ii_)]:
+            
+                    # get start,end indices of this segment in model input array
+                    i2 = m[im][-1][-1] if len(m[im]) else 0
+                    i3 = i2 + np.product(self.batch_ns[ioa][(slice(None),)+tuple(ii_)])
+                    
+                    m[im].append((iseg,i2,i3))# add segment to model map
+                    s[iseg].append((im,i1,i2,i3))# add model to segment map
+            
+            # add coarse model
+            active_fixed_ims.append(im)
+        #
+        #
+        
         
         # next, update maps with fixed neighbours
         for im,ii in itergrid(self.nm):
