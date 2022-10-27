@@ -254,7 +254,8 @@ class FBPINNTrainer(_Trainer):
             
             # update active if required
             if active is not None: 
-                D.update_active(active)
+                D.update_sampler(active[2], c.RANDOM)
+                D.update_active(active[:2])
                 print(i, "Active updated:\n", active)
                 
             gpu_start = time.time()
